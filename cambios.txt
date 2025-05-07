@@ -1,0 +1,1 @@
+Ya he implementado las funciones de register, unregister, connect, disconnect y list_users. Faltan por implementar las funciones para manejar archivos
