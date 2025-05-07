@@ -7,5 +7,5 @@ Revisa si te parecen bien.
 
 
 Estan las funciones publish_file, delete_file y list_content en la parte de servidor.
-El problema es que necesitan como parámetro el usuario que está activo y no sé de donde sacarlo.
-Debería ser una variable global de la parte del cliente.
+
+Hecha la parte en la que tenía dudas
