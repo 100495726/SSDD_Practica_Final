@@ -1,1 +1,6 @@
-Ya he implementado las funciones de register, unregister, connect, disconnect y list_users. Faltan por implementar las funciones para manejar archivos
+Implementadas las funciones de la parte de ficheros (publish_file, delete_file, list_content), 
+lo dejé todo en usuarios.c y usuarios.h porque facilitaba para comprobaciones que estuvieran en el mismo fichero.
+A lo mejor le podriamos cambiar el nombre ahora que tiene funciones tanto de usuario como de ficheros, pero como veas.
+
+¿Crees que debemos añadir que si un usuario hace un unregister se borren todos sus ficheros?
+Revisa si te parecen bien.
