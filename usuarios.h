@@ -26,7 +26,7 @@ typedef struct Fichero {
 int register_user(const char* nombre);
 int unregister_user(const char* nombre);
 int connect_user(const char* nombre, const char* ip, const char* puerto);
-int list_users(char* buffer);
+int list_users(char* buffer, const char* username);
 int disconnect_user(const char* nombre);
 
 //FILE FUNCTIONS

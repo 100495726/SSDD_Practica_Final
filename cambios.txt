@@ -4,3 +4,8 @@ A lo mejor le podriamos cambiar el nombre ahora que tiene funciones tanto de usu
 
 ¿Crees que debemos añadir que si un usuario hace un unregister se borren todos sus ficheros?
 Revisa si te parecen bien.
+
+
+Estan las funciones publish_file, delete_file y list_content en la parte de servidor.
+El problema es que necesitan como parámetro el usuario que está activo y no sé de donde sacarlo.
+Debería ser una variable global de la parte del cliente.

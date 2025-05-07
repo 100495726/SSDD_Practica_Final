@@ -129,8 +129,20 @@ int connect_user(const char* nombre, const char* ip, const char* puerto) {
     return 0;
 }
 
-int list_users(char* buffer) {
+int list_users(char* buffer, const char* username) {
     pthread_mutex_lock(&mutex);
+
+    Usuario* usuario_existente = buscar_usuario(username);
+    if (!usuario_existente) {
+            pthread_mutex_unlock(&mutex);
+            return 1;
+        }
+
+    if (!usuario_existente->conectado) {
+            pthread_mutex_unlock(&mutex);
+            return 2;
+        }
+    
     Usuario* actual = lista_usuarios;
     int offset = 0;
     int count = 0;
@@ -153,7 +165,7 @@ int list_users(char* buffer) {
 
             if (written < 0) {
                 pthread_mutex_unlock(&mutex);
-                return 2;
+                return 3;
             }
             offset += written;
         }

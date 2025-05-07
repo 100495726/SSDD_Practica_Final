@@ -109,14 +109,14 @@ void *tratar_peticion(void *arg) {
     }
     else if (strcmp(operacion, "LIST_USERS") == 0) {
         char lista[MAX_BUFFER] = {0};
-        int result = list_users(lista);
-
+        //NO SE DE DONDE SACAR USER
+        int result = list_users(lista, user);
         switch (result) {
           case 0:
             snprintf(res, MAX_BUFFER, "0 LIST_USERS OK %s", lista);
             break;
           case 1:
-			strcpy(res, "1 LIST_USERS FAIL, USER DOES NOT EXIST");
+			      strcpy(res, "1 LIST_USERS FAIL, USER DOES NOT EXIST");
             break;
           case 2:
             strcpy(res, "2 LIST_USERS FAIL, USER NOT CONNECTED");
@@ -148,6 +148,102 @@ void *tratar_peticion(void *arg) {
             break;
           case 3:
             strcpy(res, "3 DISCONNECT FAIL");
+            break;
+          default:
+            goto terminar;
+        }
+    }
+    else if (strcmp(operacion, "PUBLISH") == 0) {
+        char *filename = strtok(NULL, " ");
+        char *description = strtok(NULL, " ");
+
+        if (!filename) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
+        if (!description) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
+        //NO SE DE DONDE SACAR USER
+        int result = publish_file(user, filename, description);
+        switch (result) {
+          case 0:
+            strcpy(res, "0 PUBLISH OK");
+            break;
+          case 1:
+			strcpy(res, "1 PUBLISH FAIL, USER DOES NOT EXIST");
+            break;
+          case 2:
+            strcpy(res, "2 PUBLISH FAIL, USER NOT CONNECTED");
+            break;
+          case 3:
+            strcpy(res, "3 PUBLISH FAIL, CONTENT ALREADY PUBLISHED");
+            break;
+          case 4:
+            strcpy(res, "4 PUBLISH FAIL");
+            break;
+          default:
+            goto terminar;
+        }
+    }
+    else if (strcmp(operacion, "DELETE") == 0) {
+        char *filename = strtok(NULL, " ");
+
+        if (!filename) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
+
+        //NO SE DE DONDE SACAR USER
+        int result = delete_file(user, filename);
+        switch (result) {
+          case 0:
+            strcpy(res, "0 DELETE OK");
+            break;
+          case 1:
+			      strcpy(res, "1 DELETE FAIL, USER DOES NOT EXIST");
+            break;
+          case 2:
+            strcpy(res, "2 DELETE FAIL, USER NOT CONNECTED");
+            break;
+          case 3:
+            strcpy(res, "3 DELETE FAIL, CONTENT NOT PUBLISHED");
+            break;
+          case 4:
+            strcpy(res, "4 PUBLISH FAIL");
+            break;
+          default:
+            goto terminar;
+        }
+    }
+    else if (strcmp(operacion, "LIST_CONTENT") == 0) {
+        char lista[MAX_BUFFER] = {0};
+
+        char *user_buscado = strtok(NULL, " ");
+
+        if (!user_buscado) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
+        //NO SE DE DONDE SACAR USER_ACTIVO
+        int result = list_content(lista, user_activo, user_buscado);
+
+        switch (result) {
+          case 0:
+            snprintf(res, MAX_BUFFER, "0 LIST_CONTENT OK %s", lista);
+            break;
+          case 1:
+			      strcpy(res, "1 LIST_CONTENT FAIL, USER DOES NOT EXIST");
+            break;
+          case 2:
+            strcpy(res, "2 LIST_CONTENT FAIL, USER NOT CONNECTED");
+            break;
+          case 3:
+            strcpy(res, "3 LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST");
+            break;
+          case 4:
+            strcpy(res, "4 LIST_CONTENT FAIL");
             break;
           default:
             goto terminar;
