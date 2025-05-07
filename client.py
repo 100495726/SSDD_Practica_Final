@@ -15,7 +15,7 @@ class client :
     # ****************** ATTRIBUTES ******************
     _server = None
     _port = -1
-
+    username_activo = "not_connected"
     # ******************** METHODS *******************
 
 
@@ -62,6 +62,8 @@ class client :
             code = int(code)
             message = message[0] if message else ""
             print(message)
+            if code == 0:
+                client.username_activo = user
             return code
 
         return client.RC.ERROR
@@ -78,6 +80,8 @@ class client :
             code = int(code)
             message = message[0] if message else ""
             print(message)
+            if code == 0:
+                client.username_activo = "not_connected"
             return code
 
         return client.RC.ERROR
@@ -87,7 +91,7 @@ class client :
     def  publish(fileName,  description) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"PUBLISH {fileName} {description}"
+            command = f"PUBLISH {client.username_activo} {fileName} {description}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             if response == "OK" :
@@ -100,7 +104,7 @@ class client :
     def  delete(fileName) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"DELETE {fileName}"
+            command = f"DELETE {client.username_activo} {fileName}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             if response == "OK" :
@@ -113,7 +117,7 @@ class client :
     def  listusers() :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = "LIST_USERS"
+            command = f"LIST_USERS  {client.username_activo}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -129,7 +133,7 @@ class client :
     def  listcontent(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"LIST_CONTENT {user}"
+            command = f"LIST_CONTENT {client.username_activo} {user}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             if response == "OK" :

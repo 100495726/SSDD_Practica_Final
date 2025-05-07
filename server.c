@@ -109,7 +109,13 @@ void *tratar_peticion(void *arg) {
     }
     else if (strcmp(operacion, "LIST_USERS") == 0) {
         char lista[MAX_BUFFER] = {0};
-        //NO SE DE DONDE SACAR USER
+        char *user = strtok(NULL, " ");
+
+        if (!user) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
+
         int result = list_users(lista, user);
         switch (result) {
           case 0:
@@ -154,8 +160,14 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operacion, "PUBLISH") == 0) {
+        char *user = strtok(NULL, " ");
         char *filename = strtok(NULL, " ");
         char *description = strtok(NULL, " ");
+
+        if (!user) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
 
         if (!filename) {
             strcpy(res, "ERROR");
@@ -165,7 +177,7 @@ void *tratar_peticion(void *arg) {
             strcpy(res, "ERROR");
             goto terminar;
         }
-        //NO SE DE DONDE SACAR USER
+
         int result = publish_file(user, filename, description);
         switch (result) {
           case 0:
@@ -188,14 +200,19 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operacion, "DELETE") == 0) {
+        char *user = strtok(NULL, " ");
         char *filename = strtok(NULL, " ");
+
+        if (!user) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
 
         if (!filename) {
             strcpy(res, "ERROR");
             goto terminar;
         }
 
-        //NO SE DE DONDE SACAR USER
         int result = delete_file(user, filename);
         switch (result) {
           case 0:
@@ -220,13 +237,19 @@ void *tratar_peticion(void *arg) {
     else if (strcmp(operacion, "LIST_CONTENT") == 0) {
         char lista[MAX_BUFFER] = {0};
 
+        char *user_activo = strtok(NULL, " ");
         char *user_buscado = strtok(NULL, " ");
+
+        if (!user_activo) {
+            strcpy(res, "ERROR");
+            goto terminar;
+        }
 
         if (!user_buscado) {
             strcpy(res, "ERROR");
             goto terminar;
         }
-        //NO SE DE DONDE SACAR USER_ACTIVO
+        
         int result = list_content(lista, user_activo, user_buscado);
 
         switch (result) {
