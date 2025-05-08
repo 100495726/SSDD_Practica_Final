@@ -1,17 +1,9 @@
-Implementadas las funciones de la parte de ficheros (publish_file, delete_file, list_content), 
-lo dejé todo en usuarios.c y usuarios.h porque facilitaba para comprobaciones que estuvieran en el mismo fichero.
-A lo mejor le podriamos cambiar el nombre ahora que tiene funciones tanto de usuario como de ficheros, pero como veas.
-
-¿Crees que debemos añadir que si un usuario hace un unregister se borren todos sus ficheros?
-Revisa si te parecen bien.
-
-
-Estan las funciones publish_file, delete_file y list_content en la parte de servidor.
-
-Hecha la parte en la que tenía dudas
-
-
-Modificado el cliente para que imprima la respuesta del servidor, renombrado usuarios.c a operaciones.c
-Modificado el servidor para que imprima la ip local e imprima las operaciones recibidas en el formato correcto y modificados codigos de error
 
 Agregado el control de un error cuando el usuario no está conectado
+
+Hecha la parte de RPC. Solo he hecho commit de los que se modifican. Los demas ficheros rpc se hacen con: rpcgen -NM print_request.x
+El main del servicio RPC se genera en el rpcgen, habrá que incluir en el makefile que se cree el ejecutable del servicio RPC.
+Lo que faltaría sería pasarle como parámetro la fecha y hora que se obtienen del servicio web.
+Sería sustituirlo donde dejé puesto "FECHA_Y_HORA"
+
+El Makefile NO está actualizado. Eso hay que mirarlo

@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include "operaciones.h"
+#include "print_request.h"
 
 #define MAX_BUFFER 1024
 
@@ -18,12 +19,30 @@ typedef struct {
     char client_ip[INET_ADDRSTRLEN];
 } ThreadData;
 
+CLIENT *clnt = NULL;
+
+void init_rpc() {
+    char *server_ip = getenv("LOG_RPC_IP");
+    if (!server_ip) {
+        fprintf(stderr, "LOG_RPC_IP no definida\n");
+        exit(1);
+    }
+    clnt = clnt_create(server_ip, PRINT_REQUEST_PROG, PRINT_REQUEST_VERS, "tcp");
+    if (!clnt) {
+        clnt_pcreateerror(server_ip);
+        exit(1);
+    }
+}
+
 // Función para manejar cada solicitud en un hilo
 void *tratar_peticion(void *arg) {
+    init_rpc();
+    enum clnt_stat retval;
     ThreadData *data = (ThreadData *)arg;
     int sc = data->socket;
     char *pet = data->pet;
     char res[MAX_BUFFER] = {0};
+    Tupla request;
 
     char *operation = strtok(pet, " ");
     if (!operation) {
@@ -41,9 +60,15 @@ void *tratar_peticion(void *arg) {
         }
 
         int result = register_user(user);
+
         switch (result) {
           case 0:
             strcpy(res, "0 REGISTER OK");
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, "");
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 USERNAME IN USE");
@@ -66,6 +91,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             strcpy(res, "0 UNREGISTER OK");
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, "");
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 USER DOES NOT EXIST");
@@ -100,6 +130,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             strcpy(res, "0 CONNECT OK");
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, "");
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 CONNECT FAIL, USER DOES NOT EXIST");
@@ -125,6 +160,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             strcpy(res, "0 DISCONNECT OK");
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, "");
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 DISCONNECT FAIL, USER DOES NOT EXIST");
@@ -167,6 +207,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             strcpy(res, "0 PUBLISH OK");
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, filename);
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 PUBLISH FAIL, USER DOES NOT EXIST");
@@ -207,6 +252,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             strcpy(res, "0 DELETE OK");
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, filename);
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 DELETE FAIL, USER DOES NOT EXIST");
@@ -242,6 +292,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             snprintf(res, MAX_BUFFER, "0 LIST_USERS OK %s", lista);
+            strcpy(request.username, user);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, "");
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 LIST_USERS FAIL, USER DOES NOT EXIST");
@@ -282,6 +337,11 @@ void *tratar_peticion(void *arg) {
         switch (result) {
           case 0:
             snprintf(res, MAX_BUFFER, "0 LIST_CONTENT OK %s", lista);
+            strcpy(request.username, user_activo);
+            strcpy(request.operation, operation);
+            strcpy(request.filename, "");
+            strcpy(request.time, FECHA_Y_HORA);
+            retval = print_request_1(request);
             break;
           case 1:
 			strcpy(res, "1 LIST_CONTENT FAIL, USER DOES NOT EXIST");
