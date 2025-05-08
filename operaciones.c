@@ -1,4 +1,4 @@
-#include "usuarios.h"
+#include "operaciones.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +20,7 @@ static Usuario* buscar_usuario(const char* nombre) {
     return NULL;
 }
 
+// Función auxiliar para buscar un fichero de un usuario
 static Fichero* buscar_fichero(const char* username, const char* filename) {
     Fichero* actual = lista_ficheros;
     while (actual != NULL) {
@@ -131,13 +132,15 @@ int connect_user(const char* nombre, const char* ip, const char* puerto) {
 
 int list_users(char* buffer, const char* username) {
     pthread_mutex_lock(&mutex);
-
     Usuario* usuario_existente = buscar_usuario(username);
+
+    // Verificar que el usuario está registrado en el sistema
     if (!usuario_existente) {
             pthread_mutex_unlock(&mutex);
             return 1;
         }
 
+    // Verificar que el cliente está conectado al sistema
     if (!usuario_existente->conectado) {
             pthread_mutex_unlock(&mutex);
             return 2;
@@ -147,13 +150,11 @@ int list_users(char* buffer, const char* username) {
     int offset = 0;
     int count = 0;
 
-    // Contar usuarios conectados
+    // Contar y escribir número de usuarios conectados
     while (actual != NULL) {
         if (actual->conectado) count++;
         actual = actual->siguiente;
     }
-
-    // Escribir el número de usuarios
     offset += snprintf(buffer, MAX_USERS_LIST, "%d", count);
 
     // Escribir datos
@@ -201,114 +202,127 @@ int disconnect_user(const char* nombre) {
 }
 
 int publish_file(const char* username, const char* filename, const char* description) {
-        if (strlen(filename) == 0 || strlen(filename) >= MAX_FILE_LEN) return 4;
-        if (strlen(description) == 0 || strlen(description) >= MAX_FILE_DESCRIPTION) return 4;
+  	// Validar la entrada
+    if (strlen(filename) == 0 || strlen(filename) >= MAX_FILE_LEN) return 4;
+    if (strlen(description) == 0 || strlen(description) >= MAX_FILE_DESCRIPTION) return 4;
 
-        pthread_mutex_lock(&mutex);
-        Usuario* usuario_existente = buscar_usuario(username);
-        if (!usuario_existente) {
-            pthread_mutex_unlock(&mutex);
-            return 1;
-        }
+    pthread_mutex_lock(&mutex);
+    Usuario* usuario_existente = buscar_usuario(username);
 
-        if (!usuario_existente->conectado) {
-            pthread_mutex_unlock(&mutex);
-            return 2;
-        }
-
-        Fichero* fichero_existente = buscar_fichero(username, filename);         
-        if (fichero_existente) {
-            pthread_mutex_unlock(&mutex);
-            return 3;
-        }
-
-        Fichero* nuevo = malloc(sizeof(Fichero));
-        if (!nuevo) {
-            pthread_mutex_unlock(&mutex);
-            return 4;
-        }
-
-        strncpy(nuevo->nombre_user, username, MAX_USER_LEN);
-        strncpy(nuevo->nombre_file, filename, MAX_FILE_LEN);
-        strncpy(nuevo->description, description, MAX_FILE_DESCRIPTION);
-        nuevo->siguiente = lista_ficheros;
-        lista_ficheros = nuevo;
-
+    // Verificar que el usuario está registrado en el sistema
+    if (!usuario_existente) {
         pthread_mutex_unlock(&mutex);
-        return 0;
+        return 1;
+    }
 
+    // Verificar que el usuario está conectado al sistema
+    if (!usuario_existente->conectado) {
+        pthread_mutex_unlock(&mutex);
+        return 2;
+    }
+
+    // Verificar que el fichero no haya sido publicado por el cliente anteriormente
+    Fichero* fichero_existente = buscar_fichero(username, filename);
+    if (fichero_existente) {
+        pthread_mutex_unlock(&mutex);
+        return 3;
+    }
+
+    // Publicar fichero en el sistema
+    Fichero* nuevo = malloc(sizeof(Fichero));
+    if (!nuevo) {
+        pthread_mutex_unlock(&mutex);
+        return 4;
+    }
+
+    strncpy(nuevo->nombre_user, username, MAX_USER_LEN);
+    strncpy(nuevo->nombre_file, filename, MAX_FILE_LEN);
+    strncpy(nuevo->description, description, MAX_FILE_DESCRIPTION);
+    nuevo->siguiente = lista_ficheros;
+    lista_ficheros = nuevo;
+
+    pthread_mutex_unlock(&mutex);
+    return 0;
 }
 
 int delete_file(const char* username, const char* filename) {
-        if (strlen(filename) == 0 || strlen(filename) >= MAX_FILE_LEN) return 4;
+  	// Validar la entrada
+    if (strlen(filename) == 0 || strlen(filename) >= MAX_FILE_LEN) return 4;
 
-        pthread_mutex_lock(&mutex);
-        Usuario* usuario_existente = buscar_usuario(username);
-        if (!usuario_existente) {
-            pthread_mutex_unlock(&mutex);
-            return 1;
-        }
+    pthread_mutex_lock(&mutex);
+    Usuario* usuario_existente = buscar_usuario(username);
 
-        if (!usuario_existente->conectado) {
-            pthread_mutex_unlock(&mutex);
-            return 2;
-        }
-
-        Fichero* actual = lista_ficheros;
-        Fichero* anterior = NULL;
-
-        while (actual != NULL) {
-            if (strcmp(actual->nombre_user, username) == 0) {
-                if (strcmp(actual->nombre_file, filename) == 0) {
-                    if (anterior) {
-                        anterior->siguiente = actual->siguiente;
-                    } else {
-                        lista_ficheros = actual->siguiente;
-                    }
-                    free(actual);
-                    pthread_mutex_unlock(&mutex);
-                    return 0;
-                }
-            }
-            anterior = actual;
-            actual = actual->siguiente;
-        }
-
+    // Verificar que el usuario está registrado en el sistema
+    if (!usuario_existente) {
         pthread_mutex_unlock(&mutex);
-        return 3;
+        return 1;
+    }
 
+    // Verificar que el usuario está conectado al sistema
+    if (!usuario_existente->conectado) {
+        pthread_mutex_unlock(&mutex);
+        return 2;
+    }
+
+    Fichero* actual = lista_ficheros;
+    Fichero* anterior = NULL;
+
+    // Buscar el fichero
+    while (actual != NULL) {
+        if (strcmp(actual->nombre_user, username) == 0) {
+          	// Fichero encontrado
+            if (strcmp(actual->nombre_file, filename) == 0) {
+                if (anterior) {
+                    anterior->siguiente = actual->siguiente;
+                } else {
+                    lista_ficheros = actual->siguiente;
+                }
+                free(actual);
+                pthread_mutex_unlock(&mutex);
+                return 0;
+            }
+        }
+        anterior = actual;
+        actual = actual->siguiente;
+    }
+
+    // Si el bucle termina, el fichero no ha sido econtrado
+    pthread_mutex_unlock(&mutex);
+    return 3;
 }
 
 int list_content(char* buffer, const char* username_activo, const char* username_buscado) {
     pthread_mutex_lock(&mutex);
     Usuario* usuario_existente = buscar_usuario(username_activo);
+
+    // Verificar que el usuario está registrado en el sistema
     if (!usuario_existente) {
-            pthread_mutex_unlock(&mutex);
-            return 1;
-        }
+        pthread_mutex_unlock(&mutex);
+        return 1;
+    }
 
+    // Verificar que el usuario está conectado al sistema
     if (!usuario_existente->conectado) {
-            pthread_mutex_unlock(&mutex);
-            return 2;
-        }
+        pthread_mutex_unlock(&mutex);
+        return 2;
+    }
 
+    // Verificar que el usuario remoto está registrado en el sistema
     usuario_existente = buscar_usuario(username_buscado);
     if (!usuario_existente) {
-            pthread_mutex_unlock(&mutex);
-            return 3;
-        }
+        pthread_mutex_unlock(&mutex);
+        return 3;
+    }
 
     Fichero* actual = lista_ficheros;
     int offset = 0;
     int count = 0;
 
-    // Contar ficheros publicados
+    // Contar y escribir número de ficheros publicados
     while (actual != NULL) {
         if (strcmp(actual->nombre_user, username_buscado) == 0) count++;
         actual = actual->siguiente;
     }
-
-    // Escribir el número de usuarios
     offset += snprintf(buffer, MAX_FILES_LIST, "%d", count);
 
     // Escribir datos

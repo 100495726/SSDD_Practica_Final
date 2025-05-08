@@ -27,10 +27,14 @@ class client :
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
-            code = int(code)
             message = message[0] if message else ""
             print(message)
-            return code
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -43,10 +47,14 @@ class client :
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
-            code = int(code)
             message = message[0] if message else ""
             print(message)
-            return code
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -59,12 +67,15 @@ class client :
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
-            code = int(code)
             message = message[0] if message else ""
             print(message)
+
+            code = int(code)
             if code == 0:
                 client.username_activo = user
-            return code
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -77,12 +88,15 @@ class client :
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
-            code = int(code)
             message = message[0] if message else ""
             print(message)
+
+            code = int(code)
             if code == 0:
                 client.username_activo = "not_connected"
-            return code
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -94,8 +108,15 @@ class client :
             command = f"PUBLISH {client.username_activo} {fileName} {description}"
             s.send(command.encode())
             response = s.recv(1024).decode()
-            if response == "OK" :
-                return response
+            code, *message = response.split(" ", 1)
+            message = message[0] if message else ""
+            print(message)
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -107,8 +128,15 @@ class client :
             command = f"DELETE {client.username_activo} {fileName}"
             s.send(command.encode())
             response = s.recv(1024).decode()
-            if response == "OK" :
-                return response
+            code, *message = response.split(" ", 1)
+            message = message[0] if message else ""
+            print(message)
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -121,10 +149,14 @@ class client :
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
-            code = int(code)
             message = message[0] if message else ""
             print(message)
-            return code
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -136,8 +168,15 @@ class client :
             command = f"LIST_CONTENT {client.username_activo} {user}"
             s.send(command.encode())
             response = s.recv(1024).decode()
-            if response == "OK" :
-                return response
+            code, *message = response.split(" ", 1)
+            message = message[0] if message else ""
+            print(message)
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 
@@ -149,8 +188,15 @@ class client :
             command = f"GET_FILE {user} {remote_FileName} {local_FileName}"
             s.send(command.encode())
             response = s.recv(1024).decode()
-            if response == "OK" :
-                return response
+            code, *message = response.split(" ", 1)
+            message = message[0] if message else ""
+            print(message)
+
+            code = int(code)
+            if code == 0:
+                return client.RC.OK
+            elif code == 1:
+                return client.RC.USER_ERROR
 
         return client.RC.ERROR
 

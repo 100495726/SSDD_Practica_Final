@@ -6,7 +6,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#include "usuarios.h"
+#include <netdb.h>
+#include "operaciones.h"
 
 #define MAX_BUFFER 1024
 
@@ -17,23 +18,25 @@ typedef struct {
     char client_ip[INET_ADDRSTRLEN];
 } ThreadData;
 
-// Función que maneja cada solicitud en un hilo
+// Función para manejar cada solicitud en un hilo
 void *tratar_peticion(void *arg) {
     ThreadData *data = (ThreadData *)arg;
     int sc = data->socket;
     char *pet = data->pet;
     char res[MAX_BUFFER] = {0};
 
-    char *operacion = strtok(pet, " ");
-    if (!operacion) {
+    char *operation = strtok(pet, " ");
+    if (!operation) {
         strcpy(res, "1 Invalid operation.");
         goto terminar;
     }
 
-    if (strcmp(operacion, "REGISTER") == 0) {
+    printf("s> OPERATION %s\n", operation);
+
+    if (strcmp(operation, "REGISTER") == 0) {
         char *user = strtok(NULL, " ");
         if (!user) {
-            strcpy(res, "ERROR");
+            strcpy(res, "2 REGISTER FAIL");
             goto terminar;
         }
 
@@ -52,10 +55,10 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    else if (strcmp(operacion, "UNREGISTER") == 0) {
+    else if (strcmp(operation, "UNREGISTER") == 0) {
         char *user = strtok(NULL, " ");
         if (!user) {
-            strcpy(res, "ERROR");
+            strcpy(res, "2 UNREGISTER FAIL");
             goto terminar;
         }
 
@@ -74,8 +77,12 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    else if (strcmp(operacion, "CONNECT") == 0) {
+    else if (strcmp(operation, "CONNECT") == 0) {
         char *user = strtok(NULL, " ");
+        if (!user) {
+            strcpy(res, "3 CONNECT FAIL");
+            goto terminar;
+        }
 
         // Obtener IP y puerto del cliente conectado
         struct sockaddr_in addr;
@@ -101,43 +108,16 @@ void *tratar_peticion(void *arg) {
             strcpy(res, "2 USER ALREADY CONNECTED");
             break;
           case 3:
-            strcpy(res, "3 UNREGISTER FAIL");
+            strcpy(res, "3 CONNECT FAIL");
             break;
           default:
             goto terminar;
         }
     }
-    else if (strcmp(operacion, "LIST_USERS") == 0) {
-        char lista[MAX_BUFFER] = {0};
-        char *user = strtok(NULL, " ");
-
-        if (!user) {
-            strcpy(res, "ERROR");
-            goto terminar;
-        }
-
-        int result = list_users(lista, user);
-        switch (result) {
-          case 0:
-            snprintf(res, MAX_BUFFER, "0 LIST_USERS OK %s", lista);
-            break;
-          case 1:
-			      strcpy(res, "1 LIST_USERS FAIL, USER DOES NOT EXIST");
-            break;
-          case 2:
-            strcpy(res, "2 LIST_USERS FAIL, USER NOT CONNECTED");
-            break;
-          case 3:
-            strcpy(res, "3 LIST_USERS FAIL");
-            break;
-          default:
-            goto terminar;
-        }
-    }
-    else if (strcmp(operacion, "DISCONNECT") == 0) {
+    else if (strcmp(operation, "DISCONNECT") == 0) {
         char *user = strtok(NULL, " ");
         if (!user) {
-            strcpy(res, "ERROR");
+            strcpy(res, "3 DISCONNECT FAIL");
             goto terminar;
         }
 
@@ -159,22 +139,22 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    else if (strcmp(operacion, "PUBLISH") == 0) {
+    else if (strcmp(operation, "PUBLISH") == 0) {
         char *user = strtok(NULL, " ");
         char *filename = strtok(NULL, " ");
         char *description = strtok(NULL, " ");
 
         if (!user) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 PUBLISH FAIL");
             goto terminar;
         }
 
         if (!filename) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 PUBLISH FAIL");
             goto terminar;
         }
         if (!description) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 PUBLISH FAIL");
             goto terminar;
         }
 
@@ -199,17 +179,17 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    else if (strcmp(operacion, "DELETE") == 0) {
+    else if (strcmp(operation, "DELETE") == 0) {
         char *user = strtok(NULL, " ");
         char *filename = strtok(NULL, " ");
 
         if (!user) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 DELETE FAIL");
             goto terminar;
         }
 
         if (!filename) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 DELETE FAIL");
             goto terminar;
         }
 
@@ -219,7 +199,7 @@ void *tratar_peticion(void *arg) {
             strcpy(res, "0 DELETE OK");
             break;
           case 1:
-			      strcpy(res, "1 DELETE FAIL, USER DOES NOT EXIST");
+			strcpy(res, "1 DELETE FAIL, USER DOES NOT EXIST");
             break;
           case 2:
             strcpy(res, "2 DELETE FAIL, USER NOT CONNECTED");
@@ -228,25 +208,52 @@ void *tratar_peticion(void *arg) {
             strcpy(res, "3 DELETE FAIL, CONTENT NOT PUBLISHED");
             break;
           case 4:
-            strcpy(res, "4 PUBLISH FAIL");
+            strcpy(res, "4 DELETE FAIL");
             break;
           default:
             goto terminar;
         }
     }
-    else if (strcmp(operacion, "LIST_CONTENT") == 0) {
-        char lista[MAX_BUFFER] = {0};
+    else if (strcmp(operation, "LIST_USERS") == 0) {
+        char lista[MAX_BUFFER - 20] = {0};  // Reservar espacio para "0 LIST_USERS OK"
+        char *user = strtok(NULL, " ");
+
+        if (!user) {
+            strcpy(res, "3 LIST_USERS FAIL");
+            goto terminar;
+        }
+
+        int result = list_users(lista, user);
+        switch (result) {
+          case 0:
+            snprintf(res, MAX_BUFFER, "0 LIST_USERS OK %s", lista);
+            break;
+          case 1:
+			strcpy(res, "1 LIST_USERS FAIL, USER DOES NOT EXIST");
+            break;
+          case 2:
+            strcpy(res, "2 LIST_USERS FAIL, USER NOT CONNECTED");
+            break;
+          case 3:
+            strcpy(res, "3 LIST_USERS FAIL");
+            break;
+          default:
+            goto terminar;
+        }
+    }
+    else if (strcmp(operation, "LIST_CONTENT") == 0) {
+        char lista[MAX_BUFFER - 22] = {0};  // Reservar espacio para "0 LIST_CONTENT OK"
 
         char *user_activo = strtok(NULL, " ");
         char *user_buscado = strtok(NULL, " ");
 
         if (!user_activo) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 LIST_CONTENT FAIL");
             goto terminar;
         }
 
         if (!user_buscado) {
-            strcpy(res, "ERROR");
+            strcpy(res, "4 LIST_CONTENT FAIL");
             goto terminar;
         }
         
@@ -257,7 +264,7 @@ void *tratar_peticion(void *arg) {
             snprintf(res, MAX_BUFFER, "0 LIST_CONTENT OK %s", lista);
             break;
           case 1:
-			      strcpy(res, "1 LIST_CONTENT FAIL, USER DOES NOT EXIST");
+			strcpy(res, "1 LIST_CONTENT FAIL, USER DOES NOT EXIST");
             break;
           case 2:
             strcpy(res, "2 LIST_CONTENT FAIL, USER NOT CONNECTED");
@@ -273,7 +280,7 @@ void *tratar_peticion(void *arg) {
         }
     }
     else {
-        strcpy(res, "ERROR");
+        strcpy(res, "INVALID OPERATION");
     }
 
 terminar:
@@ -324,9 +331,22 @@ int main(int argc, char **argv) {
 
     size = sizeof(client_addr);
 
+    // Obtener la IP local
+    char hostname[256];
+    if (gethostname(hostname, sizeof(hostname)) == -1) {
+        perror("Error al obtener el nombre del host");
+    } else {
+        struct hostent *hostinfo = gethostbyname(hostname);
+        if (hostinfo == NULL) {
+            fprintf(stderr, "Error al obtener la información del host para %s\n", hostname);
+        } else {
+            char *ip_address = inet_ntoa(*(struct in_addr *)hostinfo->h_addr_list[0]);
+            printf("s> init server %s:%s\n", ip_address, argv[1]);
+        }
+    }
+
     while (1) {
         // Aceptar la conexión
-        printf("init server %s\n", argv[1]);
         sc = accept(sd, (struct sockaddr *)&client_addr, &size);
         if (sc < 0) {
             perror("Error al aceptar la conexion");
@@ -336,8 +356,6 @@ int main(int argc, char **argv) {
         // Obtener la IP del cliente
         char client_ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-
-        printf("Conexión establecida con el cliente\n");
 
         // Recibir la petición
         char *pet = malloc(MAX_BUFFER);

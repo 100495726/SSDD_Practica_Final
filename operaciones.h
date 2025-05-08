@@ -1,5 +1,5 @@
-#ifndef USUARIOS_H
-#define USUARIOS_H
+#ifndef OPERACIONES_H
+#define OPERACIONES_H
 
 #define MAX_USER_LEN 256
 #define MAX_FILE_LEN 256
@@ -22,14 +22,14 @@ typedef struct Fichero {
     struct Fichero* siguiente;
 } Fichero;
 
-//USER FUNCTIONS
+// FUNCIONES DE USUARIO
 int register_user(const char* nombre);
 int unregister_user(const char* nombre);
 int connect_user(const char* nombre, const char* ip, const char* puerto);
 int list_users(char* buffer, const char* username);
 int disconnect_user(const char* nombre);
 
-//FILE FUNCTIONS
+// FUNCIONES DE FICHERO
 int publish_file(const char* username, const char* filename, const char* description);
 int delete_file(const char* username, const char* filename);
 int list_content(char* buffer, const char* username_activo, const char* username_buscado);
