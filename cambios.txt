@@ -13,3 +13,5 @@ Hecha la parte en la que tenía dudas
 
 Modificado el cliente para que imprima la respuesta del servidor, renombrado usuarios.c a operaciones.c
 Modificado el servidor para que imprima la ip local e imprima las operaciones recibidas en el formato correcto y modificados codigos de error
+
+Agregado el control de un error cuando el usuario no está conectado

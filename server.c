@@ -149,6 +149,11 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
 
+        if (strcmp(user, "not_connected") == 0) {
+            strcpy(res, "2 PUBLISH FAIL, USER NOT CONNECTED");
+            goto terminar;
+        }
+
         if (!filename) {
             strcpy(res, "4 PUBLISH FAIL");
             goto terminar;
@@ -188,6 +193,11 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
 
+        if (strcmp(user, "not_connected") == 0) {
+            strcpy(res, "2 DELETE FAIL, USER NOT CONNECTED");
+            goto terminar;
+        }
+
         if (!filename) {
             strcpy(res, "4 DELETE FAIL");
             goto terminar;
@@ -223,6 +233,11 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
 
+        if (strcmp(user, "not_connected") == 0) {
+            strcpy(res, "2 LIST_USERS FAIL, USER NOT CONNECTED");
+            goto terminar;
+        }
+
         int result = list_users(lista, user);
         switch (result) {
           case 0:
@@ -249,6 +264,11 @@ void *tratar_peticion(void *arg) {
 
         if (!user_activo) {
             strcpy(res, "4 LIST_CONTENT FAIL");
+            goto terminar;
+        }
+
+        if (strcmp(user_activo, "not_connected") == 0) {
+            strcpy(res, "2 LIST_CONTENT FAIL, USER NOT CONNECTED");
             goto terminar;
         }
 
