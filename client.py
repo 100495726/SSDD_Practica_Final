@@ -1,6 +1,17 @@
 from enum import Enum
 import argparse
 import socket
+import zeep
+
+def get_datetime():
+    """Función para obtener la fecha y hora del servicio SOAP"""
+    try:
+        wsdl_url = "http://localhost:8000/?wsdl"
+        soap = zeep.Client(wsdl=wsdl_url)
+        return soap.service.GetDateTime()
+    except Exception as e:
+        print("Error obteniendo la hora del servidor SOAP:", e)
+        return "00/00/0000 00:00:00"
 
 class client :
 
@@ -17,13 +28,12 @@ class client :
     _port = -1
     username_activo = "not_connected"
     # ******************** METHODS *******************
-
-
     @staticmethod
     def  register(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"REGISTER {user}"
+            timestamp = get_datetime()
+            command = f"REGISTER {user} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -38,12 +48,13 @@ class client :
 
         return client.RC.ERROR
 
-   
+
     @staticmethod
     def  unregister(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"UNREGISTER {user}"
+            timestamp = get_datetime()
+            command = f"UNREGISTER {user} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -63,7 +74,8 @@ class client :
     def  connect(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"CONNECT {user}"
+            timestamp = get_datetime()
+            command = f"CONNECT {user} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -79,12 +91,13 @@ class client :
 
         return client.RC.ERROR
 
-    
+
     @staticmethod
     def  disconnect(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"DISCONNECT {user}"
+            timestamp = get_datetime()
+            command = f"DISCONNECT {user} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -105,7 +118,8 @@ class client :
     def  publish(fileName,  description) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"PUBLISH {client.username_activo} {fileName} {description}"
+            timestamp = get_datetime()
+            command = f"PUBLISH {client.username_activo} {fileName} {description} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -125,7 +139,8 @@ class client :
     def  delete(fileName) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"DELETE {client.username_activo} {fileName}"
+            timestamp = get_datetime()
+            command = f"DELETE {client.username_activo} {fileName} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -145,7 +160,8 @@ class client :
     def  listusers() :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"LIST_USERS  {client.username_activo}"
+            timestamp = get_datetime()
+            command = f"LIST_USERS  {client.username_activo} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -165,7 +181,8 @@ class client :
     def  listcontent(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"LIST_CONTENT {client.username_activo} {user}"
+            timestamp = get_datetime()
+            command = f"LIST_CONTENT {client.username_activo} {user} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -185,7 +202,8 @@ class client :
     def  getfile(user,  remote_FileName,  local_FileName) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
-            command = f"GET_FILE {user} {remote_FileName} {local_FileName}"
+            timestamp = get_datetime()
+            command = f"GET_FILE {user} {remote_FileName} {local_FileName} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -231,7 +249,7 @@ class client :
                             client.connect(line[1])
                         else :
                             print("Syntax error. Usage: CONNECT <userName>")
-                    
+
                     elif(line[0]=="PUBLISH") :
                         if (len(line) >= 3) :
                             #  Remove first two words
@@ -303,7 +321,7 @@ class client :
         if ((args.p < 1024) or (args.p > 65535)):
             parser.error("Error: Port must be in the range 1024 <= port <= 65535");
             return False;
-        
+
         client._server = args.s
         client._port = args.p
 
@@ -320,7 +338,7 @@ class client :
         #  Write code here
         client.shell()
         print("+++ FINISHED +++")
-    
+
 
 if __name__=="__main__":
     client.main([])
