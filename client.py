@@ -52,6 +52,9 @@ class client :
     @staticmethod
     def  unregister(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if user == client.username_activo:
+                print("ESTE USUARIO ESTÁ CONECTADO. DESCONECTA AL USUARIO ANTES DE ELIMINAR")
+                return client.RC.ERROR
             s.connect((client._server, client._port))
             timestamp = get_datetime()
             command = f"UNREGISTER {user} {timestamp}"
@@ -73,6 +76,9 @@ class client :
     @staticmethod
     def  connect(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if client.username_activo != "not_connected":
+                print("YA HAY UN USUARIO CONECTADO") 
+                return client.RC.ERROR
             s.connect((client._server, client._port))
             timestamp = get_datetime()
             command = f"CONNECT {user} {timestamp}"
