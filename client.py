@@ -2,6 +2,8 @@ from enum import Enum
 import argparse
 import socket
 import zeep
+import threading
+import os
 
 def get_datetime():
     """Función para obtener la fecha y hora del servicio SOAP"""
@@ -12,6 +14,15 @@ def get_datetime():
     except Exception as e:
         print("Error obteniendo la hora del servidor SOAP:", e)
         return "00/00/0000 00:00:00"
+    
+def recv_line(conn):
+    line = b""
+    while not line.endswith(b"\n"):
+        part = conn.recv(1)
+        if not part:
+            break
+        line += part
+    return line.decode().strip()
 
 class client :
 
@@ -27,7 +38,51 @@ class client :
     _server = None
     _port = -1
     username_activo = "not_connected"
+    file_server_port = None
+
     # ******************** METHODS *******************
+    @staticmethod
+    def start_file_server(listen_port=0):
+        """Función para iniciar el servidor de archivos."""
+        def file_server():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(("", listen_port))
+                s.listen(5)
+                actual_port = s.getsockname()[1]
+                client.file_server_port = actual_port
+                while True:
+                    conn, addr = s.accept()
+                    threading.Thread(target=client.handle_file_request, args=(conn, addr), daemon=True).start()
+        threading.Thread(target=file_server, daemon=True).start()
+
+    @staticmethod
+    def handle_file_request(conn, addr):
+        try:
+            op = recv_line(conn)
+            if not op.startswith("GET_FILE"):
+                conn.send(bytes([2]))
+                conn.close()
+                return
+            file_path = recv_line(conn)
+            if not os.path.isfile(file_path):
+                conn.send(bytes([1]))
+                conn.close()
+                return
+            conn.send(bytes([0]))
+            file_size = os.path.getsize(file_path)
+            conn.sendall(str(file_size).encode() + b"\n")
+            with open(file_path, "rb") as f:
+                while True:
+                    data = f.read(4096)
+                    if not data:
+                        break
+                    conn.sendall(data)
+        except Exception as e:
+            print(f"[FileServer] Error: {e}")
+        finally:
+            conn.close()
+
     @staticmethod
     def  register(user) :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -74,14 +129,19 @@ class client :
 
 
     @staticmethod
-    def  connect(user) :
+    def connect(user):
+        import time
+        # Esperar a que el file server tenga puerto asignado
+        while client.file_server_port is None:
+            time.sleep(0.1)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if client.username_activo != "not_connected":
-                print("YA HAY UN USUARIO CONECTADO") 
+                print("YA HAY UN USUARIO CONECTADO")
                 return client.RC.ERROR
             s.connect((client._server, client._port))
             timestamp = get_datetime()
-            command = f"CONNECT {user} {timestamp}"
+            # Enviar el puerto real del file server
+            command = f"CONNECT {user} {client.file_server_port} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
@@ -205,49 +265,83 @@ class client :
 
 
     @staticmethod
-    def  getfile(user,  remote_FileName,  local_FileName) :
+    def getfile(user, remote_FileName, local_FileName):
+        # Obtener IP y puerto del usuario remoto
+        user_ip = None
+        user_port = None
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
             timestamp = get_datetime()
-            command = f"LIST_CONTENT {client.username_activo} {user} {timestamp}"
+            command = f"LIST_USERS {client.username_activo} {timestamp}"
             s.send(command.encode())
-            response = s.recv(1024).decode()
-            code, *message = response.split(" ", 1)
-            message = message[0] if message else ""
-            
-            code = int(code)
-            if code == 1:
-                print(message)
-                return client.RC.USER_ERROR
-            elif code > 1:
-                print ("GET_FILE FAIL")
+            response = s.recv(4096).decode()
+            code, *rest = response.split(" ", 1)
+            if int(code) != 0:
+                print("GET_FILE FAIL: Cannot retrieve user list.")
                 return client.RC.ERROR
-
-            # Buscar el archivo remoto en la lista de archivos
-            files = message.split("\n")
-            remote_file_found = False
-            for file in files:
-                if remote_FileName in file:
-                    remote_file_found = True
+            tokens = rest[0].split()
+            for i in range(0, len(tokens), 3):
+                if tokens[i] == user:
+                    user_ip = tokens[i+1]
+                    user_port = int(tokens[i+2])
                     break
-            
-            if not remote_file_found:
-                print("GET_FILE FAIL, FILE NOT EXIST")
-                return client.RC.USER_ERROR
-            
-            # Si el archivo remoto existe, proceder a descargarlo
-            command = f"PUBLISH {client.username_activo} {local_FileName} {timestamp} {"copy of " + remote_FileName}"
-            s.send(command.encode())
-            response = s.recv(1024).decode()
-            code, *message = response.split(" ", 1)
-            message = message[0] if message else ""
+        if not user_ip or not user_port:
+            print("GET_FILE FAIL: User not found or not connected.")
+            return client.RC.ERROR
 
-            code = int(code)
-            if code == 0:
-                print("GET_FILE OK")
-                return client.RC.OK
-            
-            print("GET_FILE FAIL")            
+        # Conexión al cliente remoto
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(10)  # Timeout de 10 segundos
+                s.connect((user_ip, user_port))
+                s.sendall(b"GET_FILE\n")
+                s.sendall((remote_FileName + "\n").encode())
+                
+                # Respuesta del cliente remoto
+                code = s.recv(1)
+                if not code:
+                    print("GET_FILE FAIL: No response from remote client.")
+                    return client.RC.ERROR
+                code = int.from_bytes(code, byteorder='big')
+
+                if code == 0:
+                    # Recibir tamaño del archivo
+                    size_str = b""
+                    while not size_str.endswith(b"\n"):
+                        data = s.recv(1)
+                        if not data:
+                            raise Exception("Connection closed")
+                        size_str += data
+                    file_size = int(size_str.decode().strip())
+
+                    # Recibir archivo (usamos un archivo temporal)
+                    temp_file = local_FileName + ".tmp"
+                    received = 0
+                    with open(temp_file, "wb") as f:
+                        while received < file_size:
+                            chunk = s.recv(min(4096, file_size - received))
+                            if not chunk:
+                                raise Exception("Incomplete transfer")
+                            f.write(chunk)
+                            received += len(chunk)
+
+                    # Renombrar si la transferencia fue exitosa
+                    os.rename(temp_file, local_FileName)
+                    print("GET_FILE OK")
+                    return client.RC.OK
+
+                elif code == 1:
+                    print("GET_FILE FAIL, FILE NOT EXIST")
+                    return client.RC.USER_ERROR
+                else:
+                    print("GET_FILE FAIL")
+                    return client.RC.ERROR
+
+        except Exception as e:
+            # Borrar archivo temporal si existe
+            if os.path.exists(local_FileName + ".tmp"):
+                os.remove(local_FileName + ".tmp")
+            print(f"GET_FILE FAIL: {str(e)}")
             return client.RC.ERROR
 
     # *
@@ -367,6 +461,7 @@ class client :
             client.usage()
             return
 
+        client.start_file_server()
         #  Write code here
         client.shell()
         print("+++ FINISHED +++")

@@ -61,7 +61,6 @@ void *tratar_peticion(void *arg) {
     printf("s> OPERATION  %s  from  %s\n", operation, user);
 
     //Gestion de la operación a realizar
-    //REGISTER
     if (strcmp(operation, "REGISTER") == 0) {
         char *timestamp = strtok(NULL, "");
 
@@ -91,7 +90,6 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //UNREGISTER
     else if (strcmp(operation, "UNREGISTER") == 0) {
         char *timestamp = strtok(NULL, "");
 
@@ -120,9 +118,8 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //CONNECT
     else if (strcmp(operation, "CONNECT") == 0) {
-        // Nuevo: obtener puerto del file server enviado por el cliente
+        // Obtener puerto del file server enviado por el cliente
         char *file_server_port = strtok(NULL, " ");
         char *timestamp = strtok(NULL, "");
 
@@ -163,7 +160,6 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //DISCONNECT
     else if (strcmp(operation, "DISCONNECT") == 0) {
         char *timestamp = strtok(NULL, "");
 
@@ -183,7 +179,7 @@ void *tratar_peticion(void *arg) {
             retval = print_request_1(request, &result, clnt);
             break;
           case 1:
-			strcpy(res, "1 DISCONNECT FAIL, USER DOES NOT EXIST");
+			      strcpy(res, "1 DISCONNECT FAIL, USER DOES NOT EXIST");
             break;
           case 2:
             strcpy(res, "2 DISCONNECT FAIL, USER NOT CONNECTED");
@@ -195,7 +191,6 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //PUBLISH
     else if (strcmp(operation, "PUBLISH") == 0) {
         char *filename = strtok(NULL, " ");
         char *timestamp = strtok(NULL, " ");
@@ -240,7 +235,6 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //DELETE
     else if (strcmp(operation, "DELETE") == 0) {
         char *filename = strtok(NULL, " ");
         char *timestamp = strtok(NULL, "");
@@ -281,7 +275,6 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //LIST_USERS
     else if (strcmp(operation, "LIST_USERS") == 0) {
         char lista[MAX_BUFFER - 20] = {0};  // Reservar espacio para "0 LIST_USERS OK"
         char *timestamp = strtok(NULL, "");
@@ -319,7 +312,6 @@ void *tratar_peticion(void *arg) {
             goto terminar;
         }
     }
-    //LIST_CONTENT
     else if (strcmp(operation, "LIST_CONTENT") == 0) {
         char lista[MAX_BUFFER - 22] = {0};  // Reservar espacio para "0 LIST_CONTENT OK"
         char *user_buscado = strtok(NULL, " ");
