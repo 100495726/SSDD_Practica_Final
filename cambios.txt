@@ -1,9 +1,0 @@
-
-Agregado el control de un error cuando el usuario no está conectado
-
-Hecha la parte de RPC. Solo he hecho commit de los que se modifican. Los demas ficheros rpc se hacen con: rpcgen -NM print_request.x
-El main del servicio RPC se genera en el rpcgen, habrá que incluir en el makefile que se cree el ejecutable del servicio RPC.
-Lo que faltaría sería pasarle como parámetro la fecha y hora que se obtienen del servicio web.
-Sería sustituirlo donde dejé puesto "FECHA_Y_HORA"
-
-El Makefile NO está actualizado. Eso hay que mirarlo

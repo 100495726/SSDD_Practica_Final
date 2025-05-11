@@ -1,10 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pthread
+CFLAGS += -g -I/usr/include/tirpc
+LDLIBS += -lnsl -lpthread -ldl -ltirpc
 RPCGEN = rpcgen
 RPCFLAGS = -NM
 
 # Objetos para el servidor principal
-SERVER_OBJS = server.o operaciones.o
+SERVER_OBJS = server.o operaciones.o print_request_clnt.o print_request_xdr.o
 
 # Objetos para el servicio RPC
 RPC_OBJS = print_request_svc.o print_request_server.o print_request_xdr.o
@@ -13,8 +15,8 @@ RPC_OBJS = print_request_svc.o print_request_server.o print_request_xdr.o
 all: server print_request_svc
 
 # Servidor principal
-server: $(SERVER_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ -lnsl
+server: $(SERVER_OBJS) print_request.h
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 server.o: server.c operaciones.h print_request.h
 	$(CC) $(CFLAGS) -c server.c
@@ -24,7 +26,7 @@ operaciones.o: operaciones.c operaciones.h
 
 # Servicio RPC
 print_request_svc: $(RPC_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ -lnsl
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 # Archivos generados por rpcgen
 print_request.h print_request_clnt.c print_request_svc.c print_request_xdr.c: print_request.x

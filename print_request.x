@@ -8,6 +8,6 @@ struct Tupla {
 
 program PRINT_REQUEST_PROG {
     version PRINT_REQUEST_VERS {
-        void PRINT_REQUEST(Tupla) = 1;
+        int PRINT_REQUEST(Tupla) = 1;
     } = 1;
 } = 0x20000001;

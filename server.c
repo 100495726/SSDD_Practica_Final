@@ -38,6 +38,7 @@ void init_rpc() {
 void *tratar_peticion(void *arg) {
     init_rpc();
     enum clnt_stat retval;
+    int result = 0;
     ThreadData *data = (ThreadData *)arg;
     int sc = data->socket;
     char *pet = data->pet;
@@ -45,23 +46,22 @@ void *tratar_peticion(void *arg) {
     Tupla request;
 
     char *operation = strtok(pet, " ");
-    char *timestamp = strtok(NULL, " ");
+    char *user = strtok(NULL, " ");
 
-    if (!operation) {
+    if (!operation || !user) {
         strcpy(res, "1 Invalid operation.");
         goto terminar;
     }
 
-    if (strcmp(operation, "REGISTER") == 0) {
-        char *user = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+    printf("s> OPERATION  %s  from  %s\n", operation, user);
 
-        if (!user || !timestamp) {
+    if (strcmp(operation, "REGISTER") == 0) {
+        char *timestamp = strtok(NULL, "");
+
+        if (!timestamp) {
             strcpy(res, "2 REGISTER FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         int result = register_user(user);
 
@@ -72,7 +72,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, "");
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 USERNAME IN USE");
@@ -85,15 +85,12 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operation, "UNREGISTER") == 0) {
-        char *user = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
-        if (!user || !timestamp) {
+        if (!timestamp) {
             strcpy(res, "2 UNREGISTER FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         int result = unregister_user(user);
         switch (result) {
@@ -103,7 +100,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, "");
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 USER DOES NOT EXIST");
@@ -116,15 +113,12 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operation, "CONNECT") == 0) {
-        char *user = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
-        if (!user || !timestamp) {
+        if (!timestamp) {
             strcpy(res, "3 CONNECT FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         // Obtener IP y puerto del cliente conectado
         struct sockaddr_in addr;
@@ -146,7 +140,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, "");
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 CONNECT FAIL, USER DOES NOT EXIST");
@@ -162,15 +156,12 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operation, "DISCONNECT") == 0) {
-        char *user = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
-        if (!user || !timestamp) {
+        if (!timestamp) {
             strcpy(res, "3 DISCONNECT FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         int result = disconnect_user(user);
         switch (result) {
@@ -180,7 +171,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, "");
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 DISCONNECT FAIL, USER DOES NOT EXIST");
@@ -196,29 +187,17 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operation, "PUBLISH") == 0) {
-        char *user = strtok(NULL, " ");
         char *filename = strtok(NULL, " ");
         char *description = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
-        if (!user || !filename || !description || !timestamp) {
+        if (!filename || !description || !timestamp) {
             strcpy(res, "4 PUBLISH FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         if (strcmp(user, "not_connected") == 0) {
             strcpy(res, "2 PUBLISH FAIL, USER NOT CONNECTED");
-            goto terminar;
-        }
-
-        if (!filename) {
-            strcpy(res, "4 PUBLISH FAIL");
-            goto terminar;
-        }
-        if (!description) {
-            strcpy(res, "4 PUBLISH FAIL");
             goto terminar;
         }
 
@@ -230,7 +209,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, filename);
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 PUBLISH FAIL, USER DOES NOT EXIST");
@@ -249,24 +228,16 @@ void *tratar_peticion(void *arg) {
         }
     }
     else if (strcmp(operation, "DELETE") == 0) {
-        char *user = strtok(NULL, " ");
         char *filename = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
-        if (!user || !filename || !timestamp) {
+        if (!filename || !timestamp) {
             strcpy(res, "4 DELETE FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         if (strcmp(user, "not_connected") == 0) {
             strcpy(res, "2 DELETE FAIL, USER NOT CONNECTED");
-            goto terminar;
-        }
-
-        if (!filename) {
-            strcpy(res, "4 DELETE FAIL");
             goto terminar;
         }
 
@@ -278,7 +249,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, filename);
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 DELETE FAIL, USER DOES NOT EXIST");
@@ -298,15 +269,12 @@ void *tratar_peticion(void *arg) {
     }
     else if (strcmp(operation, "LIST_USERS") == 0) {
         char lista[MAX_BUFFER - 20] = {0};  // Reservar espacio para "0 LIST_USERS OK"
-        char *user = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
         if (!user || !timestamp) {
             strcpy(res, "3 LIST_USERS FAIL");
             goto terminar;
         }
-
-        printf("s> %s    %s\n", operation, timestamp);
 
         if (strcmp(user, "not_connected") == 0) {
             strcpy(res, "2 LIST_USERS FAIL, USER NOT CONNECTED");
@@ -321,7 +289,7 @@ void *tratar_peticion(void *arg) {
             strcpy(request.operation, operation);
             strcpy(request.filename, "");
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 LIST_USERS FAIL, USER DOES NOT EXIST");
@@ -338,38 +306,29 @@ void *tratar_peticion(void *arg) {
     }
     else if (strcmp(operation, "LIST_CONTENT") == 0) {
         char lista[MAX_BUFFER - 22] = {0};  // Reservar espacio para "0 LIST_CONTENT OK"
-
-        char *user_activo = strtok(NULL, " ");
         char *user_buscado = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, " ");
+        char *timestamp = strtok(NULL, "");
 
-        if (!user_activo || !user_buscado || !timestamp) {
+        if (!user || !user_buscado || !timestamp) {
             strcpy(res, "4 LIST_CONTENT FAIL");
             goto terminar;
         }
 
-        printf("s> %s    %s\n", operation, timestamp);
-
-        if (strcmp(user_activo, "not_connected") == 0) {
+        if (strcmp(user, "not_connected") == 0) {
             strcpy(res, "2 LIST_CONTENT FAIL, USER NOT CONNECTED");
             goto terminar;
         }
 
-        if (!user_buscado) {
-            strcpy(res, "4 LIST_CONTENT FAIL");
-            goto terminar;
-        }
-        
-        int result = list_content(lista, user_activo, user_buscado);
+        int result = list_content(lista, user, user_buscado);
 
         switch (result) {
           case 0:
             snprintf(res, MAX_BUFFER, "0 LIST_CONTENT OK %s", lista);
-            strcpy(request.username, user_activo);
+            strcpy(request.username, user);
             strcpy(request.operation, operation);
             strcpy(request.filename, "");
             strcpy(request.time, timestamp);
-            retval = print_request_1(request);
+            retval = print_request_1(request, &result, clnt);
             break;
           case 1:
 			strcpy(res, "1 LIST_CONTENT FAIL, USER DOES NOT EXIST");
