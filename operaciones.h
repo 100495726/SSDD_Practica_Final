@@ -7,6 +7,7 @@
 #define MAX_FILE_DESCRIPTION 256
 #define MAX_FILES_LIST 1024
 
+//Estructura para almacenar usuarios como lista enlazada
 typedef struct Usuario {
     char nombre[MAX_USER_LEN];
     int conectado;
@@ -15,6 +16,7 @@ typedef struct Usuario {
     struct Usuario* siguiente;
 } Usuario;
 
+//Estructura para almacenar ficheros como lista enlazada
 typedef struct Fichero {
     char nombre_user[MAX_USER_LEN];
     char nombre_file[MAX_FILE_LEN];
