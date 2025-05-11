@@ -14,6 +14,15 @@ def get_datetime():
     except Exception as e:
         print("Error obteniendo la hora del servidor SOAP:", e)
         return "00/00/0000 00:00:00"
+    
+def recv_line(conn):
+    line = b""
+    while not line.endswith(b"\n"):
+        part = conn.recv(1)
+        if not part:
+            break
+        line += part
+    return line.decode().strip()
 
 class client :
 
@@ -50,14 +59,13 @@ class client :
 
     @staticmethod
     def handle_file_request(conn, addr):
-        """Función para manejar las peticiones de archivos."""
         try:
-            op = conn.recv(1024).decode().strip()
+            op = recv_line(conn)
             if not op.startswith("GET_FILE"):
                 conn.send(bytes([2]))
                 conn.close()
                 return
-            file_path = conn.recv(1024).decode().strip()
+            file_path = recv_line(conn)
             if not os.path.isfile(file_path):
                 conn.send(bytes([1]))
                 conn.close()
