@@ -122,25 +122,24 @@ void *tratar_peticion(void *arg) {
     }
     //CONNECT
     else if (strcmp(operation, "CONNECT") == 0) {
+        // Nuevo: obtener puerto del file server enviado por el cliente
+        char *file_server_port = strtok(NULL, " ");
         char *timestamp = strtok(NULL, "");
 
-        if (!timestamp) {
+        if (!file_server_port || !timestamp) {
             strcpy(res, "3 CONNECT FAIL");
             goto terminar;
         }
 
-        // Obtener IP y puerto del cliente conectado
+        // Obtener IP del cliente conectado
         struct sockaddr_in addr;
         socklen_t addr_len = sizeof(addr);
         getpeername(sc, (struct sockaddr*)&addr, &addr_len);
-
         char ip_str[INET_ADDRSTRLEN];
-        char port_str[6];
-
         inet_ntop(AF_INET, &addr.sin_addr, ip_str, sizeof(ip_str));
-        snprintf(port_str, sizeof(port_str), "%d", ntohs(addr.sin_port));
 
-        int result = connect_user(user, ip_str, port_str);
+        // Usar el puerto recibido del cliente, no el de la conexión
+        int result = connect_user(user, ip_str, file_server_port);
 
         switch (result) {
           case 0:
