@@ -188,8 +188,11 @@ void *tratar_peticion(void *arg) {
     }
     else if (strcmp(operation, "PUBLISH") == 0) {
         char *filename = strtok(NULL, " ");
-        char *description = strtok(NULL, " ");
-        char *timestamp = strtok(NULL, "");
+        char *timestamp = strtok(NULL, " ");
+        char *buffer = strtok(NULL, " ");
+        char *description = strtok(NULL, "");
+
+        sprintf(timestamp, "%s %s", timestamp, buffer);
 
         if (!filename || !description || !timestamp) {
             strcpy(res, "4 PUBLISH FAIL");

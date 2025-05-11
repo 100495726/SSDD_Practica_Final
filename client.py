@@ -125,7 +125,7 @@ class client :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
             timestamp = get_datetime()
-            command = f"PUBLISH {client.username_activo} {fileName} {description} {timestamp}"
+            command = f"PUBLISH {client.username_activo} {fileName} {timestamp} {description}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
