@@ -209,20 +209,46 @@ class client :
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((client._server, client._port))
             timestamp = get_datetime()
-            command = f"GET_FILE {user} {remote_FileName} {local_FileName} {timestamp}"
+            command = f"LIST_CONTENT {client.username_activo} {user} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
             message = message[0] if message else ""
-            print(message)
+            
+            code = int(code)
+            if code == 1:
+                print(message)
+                return client.RC.USER_ERROR
+            elif code > 1:
+                print ("GET_FILE FAIL")
+                return client.RC.ERROR
+
+            # Buscar el archivo remoto en la lista de archivos
+            files = message.split("\n")
+            remote_file_found = False
+            for file in files:
+                if remote_FileName in file:
+                    remote_file_found = True
+                    break
+            
+            if not remote_file_found:
+                print("GET_FILE FAIL, FILE NOT EXIST")
+                return client.RC.USER_ERROR
+            
+            # Si el archivo remoto existe, proceder a descargarlo
+            command = f"PUBLISH {client.username_activo} {local_FileName} {timestamp} {"copy of " + remote_FileName}"
+            s.send(command.encode())
+            response = s.recv(1024).decode()
+            code, *message = response.split(" ", 1)
+            message = message[0] if message else ""
 
             code = int(code)
             if code == 0:
+                print("GET_FILE OK")
                 return client.RC.OK
-            elif code == 1:
-                return client.RC.USER_ERROR
-
-        return client.RC.ERROR
+            
+            print("GET_FILE FAIL")            
+            return client.RC.ERROR
 
     # *
     # **
