@@ -122,14 +122,19 @@ class client :
 
 
     @staticmethod
-    def  connect(user) :
+    def connect(user):
+        import time
+        # Esperar a que el file server tenga puerto asignado
+        while client.file_server_port is None:
+            time.sleep(0.1)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if client.username_activo != "not_connected":
-                print("YA HAY UN USUARIO CONECTADO") 
+                print("YA HAY UN USUARIO CONECTADO")
                 return client.RC.ERROR
             s.connect((client._server, client._port))
             timestamp = get_datetime()
-            command = f"CONNECT {user} {timestamp}"
+            # Enviar el puerto real del file server
+            command = f"CONNECT {user} {client.file_server_port} {timestamp}"
             s.send(command.encode())
             response = s.recv(1024).decode()
             code, *message = response.split(" ", 1)
