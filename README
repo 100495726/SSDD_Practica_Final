@@ -1,0 +1,19 @@
+Para compilar nuestro proyecto tenemos un Makefile. Hacer un make en terminal hará el rpcgen necesario para el servicio RPC y generará los ejecutables server y print_request_svc
+
+Para desplegar todo el proyecto se debe ejecutar el server con su puerto como parametro.
+Debe exportarse también la variable de entorno con la IP del servicio RPC:
+
+export LOG_RPC_IP=<IP_del_servicio_RPC>
+./server <PORT>
+
+Se debe ejecutar en otra terminal distinta el servidor del servicio RPC:
+
+./print_request_svc
+
+En otra terminal tendremos también el servicio web de fecha y hora implementado en python:
+
+python3 ./ws-time-service.py 
+
+Y por ultimo ejecutaremos los clientes en terminales separadas de la siguiente forma:
+
+python3 ./client.py -s <IP_DEL_SERVER> -p <PORT_DEL_SERVER>
